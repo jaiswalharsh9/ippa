@@ -3,11 +3,19 @@ import cv2
 import numpy as np
 from PIL import Image
 
-st.title("🖼️ Advanced Image Processing App")
-st.write("Upload an image and apply various filters.")
+# --- App title ---
+st.markdown("<h1 style='text-align: center;'>🖼️ Advanced Image Processing App</h1>", unsafe_allow_html=True)
+st.markdown("### Upload an image and apply cool filters in real time!")
 
-uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+# --- Sidebar ---
+st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/OpenCV_Logo_with_text_svg_version.svg/512px-OpenCV_Logo_with_text_svg_version.svg.png", width=100)
+st.sidebar.markdown("## 🛠️ Filters")
+st.sidebar.markdown("Choose a filter to apply to your uploaded image.")
 
+# --- Upload image ---
+uploaded_file = st.file_uploader("📤 Upload an image", type=["jpg", "jpeg", "png"])
+
+# --- Image Filters ---
 def apply_sepia(img):
     sepia_filter = np.array([[0.272, 0.534, 0.131],
                              [0.349, 0.686, 0.168],
@@ -22,48 +30,53 @@ def apply_sketch(img):
     sketch = cv2.divide(gray, 255 - blur, scale=256)
     return sketch
 
+# --- Main processing ---
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
     img_array = np.array(image)
 
-    st.subheader("Original Image")
-    st.image(image, caption='Uploaded Image', use_column_width=True)
-
-    st.sidebar.title("Choose a Filter")
-    option = st.sidebar.radio(
-        "Select a filter",
+    option = st.sidebar.selectbox(
+        "🎨 Select a filter",
         ["Grayscale", "Canny Edge Detection", "Blur", "Sepia", "Invert Colors", "Sketch"]
     )
 
+    # --- Filter processing ---
     if option == "Grayscale":
-        gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
-        st.subheader("Grayscale Image")
-        st.image(gray, use_column_width=True, channels="GRAY")
+        processed = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
 
     elif option == "Canny Edge Detection":
         low = st.sidebar.slider("Min Threshold", 0, 100, 50)
         high = st.sidebar.slider("Max Threshold", 100, 300, 150)
-        edges = cv2.Canny(img_array, low, high)
-        st.subheader("Edge Detected Image")
-        st.image(edges, use_column_width=True, channels="GRAY")
+        processed = cv2.Canny(img_array, low, high)
 
     elif option == "Blur":
         k = st.sidebar.slider("Kernel Size", 1, 15, 5, step=2)
-        blurred = cv2.GaussianBlur(img_array, (k, k), 0)
-        st.subheader("Blurred Image")
-        st.image(blurred, use_column_width=True)
+        processed = cv2.GaussianBlur(img_array, (k, k), 0)
 
     elif option == "Sepia":
-        sepia_img = apply_sepia(img_array)
-        st.subheader("Sepia Image")
-        st.image(sepia_img, use_column_width=True)
+        processed = apply_sepia(img_array)
 
     elif option == "Invert Colors":
-        inverted = cv2.bitwise_not(img_array)
-        st.subheader("Inverted Color Image")
-        st.image(inverted, use_column_width=True)
+        processed = cv2.bitwise_not(img_array)
 
     elif option == "Sketch":
-        sketch_img = apply_sketch(img_array)
-        st.subheader("Sketch Effect")
-        st.image(sketch_img, use_column_width=True, channels="GRAY")
+        processed = apply_sketch(img_array)
+
+    # --- Layout: side-by-side view ---
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("#### 🖼️ Original Image")
+        st.image(image, use_column_width=True)
+
+    with col2:
+        st.markdown(f"#### ✨ {option} Image")
+        if option in ["Grayscale", "Canny Edge Detection", "Sketch"]:
+            st.image(processed, use_column_width=True, channels="GRAY")
+        else:
+            st.image(processed, use_column_width=True)
+
+# --- Footer ---
+st.markdown("---")
+st.markdown("<p style='text-align: center;'>Built with ❤️ using Streamlit & OpenCV</p>", unsafe_allow_html=True)
+
